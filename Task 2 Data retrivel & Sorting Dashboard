@@ -1,0 +1,53 @@
+-- Create Database
+CREATE DATABASE student_dashboard;
+USE student_dashboard;
+
+-- Create Table
+CREATE TABLE students (
+    student_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    dob DATE NOT NULL,
+    department VARCHAR(50) NOT NULL,
+    phone VARCHAR(15) NOT NULL
+);
+
+-- Insert Sample Data
+INSERT INTO students (name, email, dob, department, phone) VALUES
+('Arun Kumar', 'arun@gmail.com', '2003-04-15', 'CSE', '9876543210'),
+('Priya Sharma', 'priya@gmail.com', '2002-09-21', 'IT', '9123456789'),
+('Karthik Raj', 'karthik@gmail.com', '2003-01-10', 'ECE', '9988776655'),
+('Divya R', 'divya@gmail.com', '2002-12-05', 'CSE', '9090909090');
+
+-- Display All Records
+SELECT * FROM students;
+
+-- Sort by Name (Ascending)
+SELECT * FROM students
+ORDER BY name ASC;
+
+-- Sort by Date of Birth (Newest First)
+SELECT * FROM students
+ORDER BY dob DESC;
+
+-- Filter by Department (Example: CSE)
+SELECT * FROM students
+WHERE department = 'CSE';
+
+-- Filter by Department and Sort by Name
+SELECT * FROM students
+WHERE department = 'CSE'
+ORDER BY name ASC;
+
+-- Count Total Students
+SELECT COUNT(*) AS total_students
+FROM students;
+
+-- Count Students per Department
+SELECT department, COUNT(*) AS total_students
+FROM students
+GROUP BY department;
+
+-- Search by Name
+SELECT * FROM students
+WHERE name LIKE '%Arun%';
