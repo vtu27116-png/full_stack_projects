@@ -1,0 +1,118 @@
+
+-- ======================================
+-- CREATE DATABASE
+-- ======================================
+
+CREATE DATABASE audit_logging_system;
+USE audit_logging_system;
+
+
+-- ======================================
+-- MAIN TABLE (Employees)
+-- ======================================
+
+CREATE TABLE employees (
+    emp_id INT AUTO_INCREMENT PRIMARY KEY,
+    emp_name VARCHAR(100) NOT NULL,
+    department VARCHAR(50),
+    salary DECIMAL(10,2),
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+
+-- ======================================
+-- LOG TABLE (Audit Logs)
+-- ======================================
+
+CREATE TABLE audit_logs (
+    log_id INT AUTO_INCREMENT PRIMARY KEY,
+    emp_id INT,
+    action_type VARCHAR(20),   -- INSERT or UPDATE
+    old_salary DECIMAL(10,2),
+    new_salary DECIMAL(10,2),
+    action_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+-- ======================================
+-- TRIGGER: AFTER INSERT
+-- Logs every new employee added
+-- ======================================
+
+DELIMITER $$
+
+CREATE TRIGGER after_employee_insert
+AFTER INSERT ON employees
+FOR EACH ROW
+BEGIN
+    INSERT INTO audit_logs (emp_id, action_type, old_salary, new_salary)
+    VALUES (NEW.emp_id, 'INSERT', NULL, NEW.salary);
+END$$
+
+DELIMITER ;
+
+
+-- ======================================
+-- TRIGGER: AFTER UPDATE
+-- Logs salary changes
+-- ======================================
+
+DELIMITER $$
+
+CREATE TRIGGER after_employee_update
+AFTER UPDATE ON employees
+FOR EACH ROW
+BEGIN
+    INSERT INTO audit_logs (emp_id, action_type, old_salary, new_salary)
+    VALUES (NEW.emp_id, 'UPDATE', OLD.salary, NEW.salary);
+END$$
+
+DELIMITER ;
+
+
+-- ======================================
+-- INSERT SAMPLE DATA
+-- ======================================
+
+INSERT INTO employees (emp_name, department, salary)
+VALUES ('Arun Kumar', 'IT', 40000.00);
+
+INSERT INTO employees (emp_name, department, salary)
+VALUES ('Priya Sharma', 'HR', 35000.00);
+
+
+-- ======================================
+-- UPDATE SAMPLE DATA
+-- ======================================
+
+UPDATE employees
+SET salary = 45000.00
+WHERE emp_id = 1;
+
+
+-- ======================================
+-- VIEW: DAILY ACTIVITY REPORT
+-- ======================================
+
+CREATE VIEW daily_activity_report AS
+SELECT 
+    DATE(action_time) AS activity_date,
+    action_type,
+    COUNT(*) AS total_actions
+FROM audit_logs
+GROUP BY DATE(action_time), action_type
+ORDER BY activity_date DESC;
+
+
+-- ======================================
+-- DISPLAY REPORT
+-- ======================================
+
+SELECT * FROM daily_activity_report;
+
+
+-- ======================================
+-- VIEW COMPLETE AUDIT LOG
+-- ======================================
+
+SELECT * FROM audit_logs;
