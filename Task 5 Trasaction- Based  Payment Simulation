@@ -1,0 +1,111 @@
+
+-- ======================================
+-- CREATE DATABASE
+-- ======================================
+
+CREATE DATABASE payment_simulation;
+USE payment_simulation;
+
+
+-- ======================================
+-- CREATE TABLES
+-- ======================================
+
+-- User Account Table
+CREATE TABLE users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_name VARCHAR(100) NOT NULL,
+    balance DECIMAL(10,2) NOT NULL
+);
+
+-- Merchant Account Table
+CREATE TABLE merchants (
+    merchant_id INT AUTO_INCREMENT PRIMARY KEY,
+    merchant_name VARCHAR(100) NOT NULL,
+    balance DECIMAL(10,2) NOT NULL
+);
+
+
+-- ======================================
+-- INSERT SAMPLE DATA
+-- ======================================
+
+INSERT INTO users (user_name, balance) VALUES
+('Arun Kumar', 5000.00),
+('Priya Sharma', 3000.00);
+
+INSERT INTO merchants (merchant_name, balance) VALUES
+('Amazon Store', 10000.00),
+('Flipkart Store', 8000.00);
+
+
+-- ======================================
+-- VIEW INITIAL BALANCES
+-- ======================================
+
+SELECT * FROM users;
+SELECT * FROM merchants;
+
+
+-- ======================================
+-- PAYMENT TRANSACTION (SUCCESS CASE)
+-- User 1 pays 1000 to Merchant 1
+-- ======================================
+
+START TRANSACTION;
+
+UPDATE users
+SET balance = balance - 1000
+WHERE user_id = 1;
+
+UPDATE merchants
+SET balance = balance + 1000
+WHERE merchant_id = 1;
+
+COMMIT;
+
+
+-- ======================================
+-- PAYMENT TRANSACTION (FAILURE CASE)
+-- User 2 tries to pay 5000 (Insufficient Balance)
+-- ======================================
+
+START TRANSACTION;
+
+UPDATE users
+SET balance = balance - 5000
+WHERE user_id = 2;
+
+-- Condition Check (Manual Logic Simulation)
+-- If balance becomes negative, cancel transaction
+
+SELECT balance FROM users WHERE user_id = 2;
+
+ROLLBACK;
+
+
+-- ======================================
+-- VIEW FINAL BALANCES
+-- ======================================
+
+SELECT * FROM users;
+SELECT * FROM merchants;
+
+
+-- ======================================
+-- OPTIONAL: CHECK PAYMENT HISTORY TABLE
+-- ======================================
+
+CREATE TABLE transactions (
+    transaction_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    merchant_id INT,
+    amount DECIMAL(10,2),
+    transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insert record only after successful payment
+INSERT INTO transactions (user_id, merchant_id, amount)
+VALUES (1, 1, 1000.00);
+
+SELECT * FROM transactions;
