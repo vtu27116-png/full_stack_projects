@@ -1,0 +1,45 @@
+-- Create Database
+CREATE DATABASE login_system;
+USE login_system;
+
+-- Create Users Table
+CREATE TABLE users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insert Sample Users
+INSERT INTO users (username, password) VALUES
+('admin', 'admin123'),
+('gopi', 'gopi@123'),
+('user1', 'password1');
+
+-- Check Login Credentials (Used in Backend)
+-- Replace ? with actual values in application
+SELECT * FROM users
+WHERE username = 'admin'
+AND password = 'admin123';
+
+-- Update Password
+UPDATE users
+SET password = 'newpassword123'
+WHERE username = 'admin';
+
+-- Delete User
+DELETE FROM users
+WHERE username = 'user1';
+
+-- View All Users
+SELECT * FROM users;
+
+-- Count Total Users
+SELECT COUNT(*) AS total_users
+FROM users;
+
+-- Drop Table (If Needed)
+DROP TABLE users;
+
+-- Drop Database (If Needed)
+DROP DATABASE login_system;
