@@ -1,0 +1,169 @@
+package com.example.productapi;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+import org.springframework.validation.annotation.Validated;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+
+import java.util.*;
+
+@SpringBootApplication
+@RestController
+@RequestMapping("/products")
+@Validated
+public class ProductApiApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(ProductApiApplication.class, args);
+    }
+
+    @Autowired
+    private ProductService service;
+
+    // 🔹 GET ALL
+    @GetMapping
+    public List<Product> getAllProducts() {
+        return service.getAllProducts();
+    }
+
+    // 🔹 GET BY ID
+    @GetMapping("/{id}")
+    public Product getProduct(@PathVariable Long id) {
+        return service.getProductById(id);
+    }
+
+    // 🔹 CREATE with validation
+    @PostMapping
+    public Product createProduct(@Valid @RequestBody Product p) {
+        return service.saveProduct(p);
+    }
+
+    // 🔹 UPDATE with validation
+    @PutMapping("/{id}")
+    public Product updateProduct(@PathVariable Long id, @Valid @RequestBody Product p) {
+        return service.updateProduct(id, p);
+    }
+
+    // 🔹 DELETE
+    @DeleteMapping("/{id}")
+    public String deleteProduct(@PathVariable Long id) {
+        service.deleteProduct(id);
+        return "Product deleted successfully";
+    }
+}
+
+// ================= ENTITY =================
+@Entity
+@Table(name = "products")
+class Product {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @NotBlank(message = "Product name is required")
+    private String name;
+
+    @Positive(message = "Price must be greater than 0")
+    private double price;
+
+    @Min(value = 0, message = "Quantity cannot be negative")
+    private int quantity;
+
+    public Long getId() { return id; }
+    public String getName() { return name; }
+    public double getPrice() { return price; }
+    public int getQuantity() { return quantity; }
+
+    public void setId(Long id) { this.id = id; }
+    public void setName(String name) { this.name = name; }
+    public void setPrice(double price) { this.price = price; }
+    public void setQuantity(int quantity) { this.quantity = quantity; }
+}
+
+// ================= REPOSITORY =================
+interface ProductRepository extends JpaRepository<Product, Long> {}
+
+// ================= SERVICE =================
+@Service
+class ProductService {
+
+    @Autowired
+    private ProductRepository repo;
+
+    public List<Product> getAllProducts() {
+        return repo.findAll();
+    }
+
+    public Product getProductById(Long id) {
+        return repo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+    }
+
+    public Product saveProduct(Product p) {
+        return repo.save(p);
+    }
+
+    public Product updateProduct(Long id, Product p) {
+        Product existing = getProductById(id);
+        existing.setName(p.getName());
+        existing.setPrice(p.getPrice());
+        existing.setQuantity(p.getQuantity());
+        return repo.save(existing);
+    }
+
+    public void deleteProduct(Long id) {
+        Product existing = getProductById(id);
+        repo.delete(existing);
+    }
+}
+
+// ================= GLOBAL EXCEPTION HANDLER =================
+@ControllerAdvice
+class GlobalExceptionHandler {
+
+    // 🔹 Handle validation errors
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, String>> handleValidationExceptions(
+            MethodArgumentNotValidException ex) {
+
+        Map<String, String> errors = new HashMap<>();
+
+        ex.getBindingResult().getFieldErrors().forEach(error ->
+                errors.put(error.getField(), error.getDefaultMessage())
+        );
+
+        return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
+    }
+
+    // 🔹 Handle generic exceptions
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
+
+        Map<String, String> error = new HashMap<>();
+        error.put("error", ex.getMessage());
+
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    // 🔹 Handle all other exceptions
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, String>> handleException(Exception ex) {
+
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "Something went wrong");
+
+        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+}
