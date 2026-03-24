@@ -1,0 +1,130 @@
+package com.example.studentdal;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.data.jpa.repository.*;
+import org.springframework.data.domain.*;
+
+import jakarta.persistence.*;
+import java.util.List;
+
+@SpringBootApplication
+@RestController
+@RequestMapping("/students")
+public class StudentDalApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(StudentDalApplication.class, args);
+    }
+
+    @Autowired
+    private StudentService service;
+
+    // 🔹 Get by Department
+    @GetMapping("/department/{dept}")
+    public List<Student> getByDepartment(@PathVariable String dept) {
+        return service.getByDepartment(dept);
+    }
+
+    // 🔹 Get by Age > value
+    @GetMapping("/age/{age}")
+    public List<Student> getByAge(@PathVariable int age) {
+        return service.getByAgeGreater(age);
+    }
+
+    // 🔹 Sorting
+    @GetMapping("/sorted/{field}")
+    public List<Student> getSorted(@PathVariable String field) {
+        return service.getSortedStudents(field);
+    }
+
+    // 🔹 Pagination
+    @GetMapping("/page")
+    public Page<Student> getPaginated(@RequestParam int page,
+                                      @RequestParam int size) {
+        return service.getStudentsPaginated(page, size);
+    }
+
+    // 🔹 Pagination + Filter
+    @GetMapping("/department-page/{dept}")
+    public Page<Student> getDeptPaginated(@PathVariable String dept,
+                                          @RequestParam int page,
+                                          @RequestParam int size) {
+        return service.getByDepartmentPaginated(dept, page, size);
+    }
+}
+
+// ================= ENTITY =================
+@Entity
+@Table(name = "students")
+class Student {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+    private String department;
+    private int age;
+
+    public Long getId() { return id; }
+    public String getName() { return name; }
+    public String getDepartment() { return department; }
+    public int getAge() { return age; }
+
+    public void setId(Long id) { this.id = id; }
+    public void setName(String name) { this.name = name; }
+    public void setDepartment(String department) { this.department = department; }
+    public void setAge(int age) { this.age = age; }
+}
+
+// ================= REPOSITORY =================
+interface StudentRepository extends JpaRepository<Student, Long> {
+
+    // Derived Query Methods
+    List<Student> findByDepartment(String department);
+
+    List<Student> findByAgeGreaterThan(int age);
+
+    List<Student> findByDepartmentAndAge(String department, int age);
+
+    // JPQL Custom Query
+    @Query("SELECT s FROM Student s WHERE s.age < ?1")
+    List<Student> findStudentsYoungerThan(int age);
+
+    // Pagination + Filter
+    Page<Student> findByDepartment(String department, Pageable pageable);
+}
+
+// ================= SERVICE =================
+@Service
+class StudentService {
+
+    @Autowired
+    private StudentRepository repo;
+
+    public List<Student> getByDepartment(String dept) {
+        return repo.findByDepartment(dept);
+    }
+
+    public List<Student> getByAgeGreater(int age) {
+        return repo.findByAgeGreaterThan(age);
+    }
+
+    public List<Student> getSortedStudents(String field) {
+        return repo.findAll(Sort.by(Sort.Direction.ASC, field));
+    }
+
+    public Page<Student> getStudentsPaginated(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return repo.findAll(pageable);
+    }
+
+    public Page<Student> getByDepartmentPaginated(String dept, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return repo.findByDepartment(dept, pageable);
+    }
+}
